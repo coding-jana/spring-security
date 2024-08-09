@@ -34,6 +34,7 @@ public class ApplicationSecurityConfig{
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("/", "index", "/css/**", "/js/**").permitAll()
+                                .requestMatchers("/api/**").hasRole(STUDENT.name())
                                 .anyRequest().authenticated()
                 )
                 .httpBasic(withDefaults());
