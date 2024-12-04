@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import static com.spring.security.security.ApplicationUserPermission.COURSE_WRITE;
 import static com.spring.security.security.ApplicationUserRole.*;
@@ -47,6 +48,10 @@ public class ApplicationSecurityConfig{
 //                                .requestMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ADMIN.name(), ADMINTRAINEE.name())
                                 .anyRequest().authenticated()
                 )
+                //When you use CSRF protection? Our recommendation is to use CSRF protection for any
+                //request that could be processed by a browser by normal users. If you are only creating
+                //a service that is used by non-browser clients, you will likely want to disable CSRF protection.
+                //use with Token -> .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(withDefaults());
         return http.build();
