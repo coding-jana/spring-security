@@ -3,8 +3,6 @@ package com.spring.security.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,11 +13,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.spring.security.security.ApplicationUserPermission.COURSE_WRITE;
 import static com.spring.security.security.ApplicationUserRole.*;
-import static org.springframework.security.config.Customizer.withDefaults;
+
 
 
 @Configuration
@@ -42,18 +42,29 @@ public class ApplicationSecurityConfig{
                                 .requestMatchers("/", "index", "/css/**", "/js/**").permitAll()
                                 .requestMatchers("/api/**").hasRole(STUDENT.name())
                                 .requestMatchers("/management/api/**").hasAuthority(COURSE_WRITE.name())
-//                                .requestMatchers(HttpMethod.DELETE,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
-//                                .requestMatchers(HttpMethod.POST,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
-//                                .requestMatchers(HttpMethod.PUT,"/management/api/**").hasAuthority(COURSE_WRITE.getPermission())
-//                                .requestMatchers(HttpMethod.GET,"/management/api/**").hasAnyRole(ADMIN.name(), ADMINTRAINEE.name())
                                 .anyRequest().authenticated()
                 )
-                //When you use CSRF protection? Our recommendation is to use CSRF protection for any
-                //request that could be processed by a browser by normal users. If you are only creating
-                //a service that is used by non-browser clients, you will likely want to disable CSRF protection.
-                //use with Token -> .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .httpBasic(withDefaults());
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .permitAll()
+                        .defaultSuccessUrl("/courses", true)
+                        .passwordParameter("password")
+                        .usernameParameter("username")
+                )
+                .rememberMe(remember -> remember
+                        .key("somethingverysecure")
+                        .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
+                        .rememberMeParameter("remember-me")
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                        .clearAuthentication(true)
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID", "remember-me")
+                        .logoutSuccessUrl("/login")
+                );
         return http.build();
     }
 
